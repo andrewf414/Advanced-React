@@ -1,10 +1,10 @@
-import "dotenv/config";
-import { config, createSchema } from "@keystone-next/keystone/schema";
-import { createAuth } from "@keystone-next/keystone/auth";
-import { User } from "./schemas/User";
+import 'dotenv/config';
+import { config, createSchema } from '@keystone-next/keystone/schema';
+import { createAuth } from '@keystone-next/auth';
+import { withItemData, statelessSessions } from '@keystone-next/keystone/session';
+import { User } from './schemas/User';
 
-const databaseURL =
-  process.env.DATABASE_URL || "mongodb://localhost/keystone-sick-fits-tutorial";
+const databaseURL = process.env.DATABASE_URL || 'mongodb://localhost/keystone-sick-fits-tutorial';
 
 const sessionConfig = {
   maxAge: 60 * 60 * 24 * 360, // how long should they stay signed in?
@@ -12,11 +12,11 @@ const sessionConfig = {
 };
 
 const { withAuth } = createAuth({
-  listKey: "User",
-  identityField: "email",
-  secretField: "password",
+  listKey: 'User',
+  identityField: 'email',
+  secretField: 'password',
   initFirstItem: {
-    fields: ["name", "email", "password"],
+    fields: ['name', 'email', 'password'],
     // TODO: add in initial roles
   },
 });
@@ -30,7 +30,7 @@ export default withAuth(
       },
     },
     db: {
-      adapter: "mongoose",
+      adapter: 'mongoose',
       url: databaseURL,
       // TODO: add data seeding here
     },
@@ -39,9 +39,15 @@ export default withAuth(
       User,
     }),
     ui: {
-      // TODO: change this for roles
-      isAccessAllowed: () => true,
+      // Show the UI only for people who pass this test
+      isAccessAllowed: ({ session }) => {
+        console.log(session);
+        return !!session?.data;
+      },
     },
     // TODO: add session values here
+    session: withItemData(statelessSessions(sessionConfig), {
+      User: 'id',
+    }),
   })
 );
